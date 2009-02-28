@@ -14,7 +14,6 @@ def FirewallKeepAlive(url):
   # Connect to the firewall
   conn = httplib.HTTPConnection(url.netloc)
   conn.request("GET", url.path + "?" + url.query)
-  response = conn.getresponse()
   
   # Set a timer
   t = threading.Timer(1600.0, FirewallKeepAlive, [url])
@@ -62,11 +61,13 @@ def FirewallAuth(username, password):
     keepaliveURL = keepaliveMatch.group(1)
     
     logger.info("The keep alive URL is: " + keepaliveURL)
+    logger.debug(postData)
     FirewallKeepAlive(urlparse.urlparse(keepaliveURL))
   
   else:
-    logger.fatal("Server returned " + str(response.status) + " " +
-                 httplib.responses[response.status] + ", so we cannot proceed ")
+    logger.fatal(("Server returned %d %s, so we cannot proceed. Are you " +
+                 "already authenticated?") %
+                 (response.status, httplib.responses[response.status]))
     return 2
 
 """
