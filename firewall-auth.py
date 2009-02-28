@@ -58,7 +58,7 @@ def FirewallAuth(username, password):
     # Look for the right magic value in the data
     match = re.search(r"VALUE=\"([0-9a-f]+)\"", data)
     magicString = match.group(1)
-    logger.debug("The magic string is:", magicString)
+    logger.debug("The magic string is: " + magicString)
 
     # Now construct a POST request
     params = urllib.urlencode({'username': username, 'password': password,
