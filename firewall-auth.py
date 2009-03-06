@@ -33,27 +33,42 @@ import sys
 import logging
 
 def FirewallKeepAlive(url):
-  logging.getLogger("FirewallLogger").info("Sending request to keep alive")
+  logger = logging.getLogger("FirewallLogger")
+  logger.info("Sending request to keep alive")
   # Connect to the firewall
-  conn = httplib.HTTPConnection(url.netloc)
+  conn = httplib.HTTPSConnection(url.netloc)
   conn.request("GET", url.path + "?" + url.query)
+  response = conn.getresponse()
+
+  logger.debug(str(response.status))
+  logger.debug(response.read())
+
   conn.close()
 
   # Set a timer
-  t = threading.Timer(1600.0, FirewallKeepAlive, [url])
+  t = threading.Timer(400.0, FirewallKeepAlive, [url])
   t.start()
 
 
 def FirewallAuth(username, password):
   # Connect to Google, see if we can connect or not
   logger = logging.getLogger("FirewallLogger")
-  conn = httplib.HTTPConnection("www.google.com:80")
+  conn = httplib.HTTPConnection("74.125.67.100:80")
   conn.request("GET", "/")
   response = conn.getresponse()
-  # If the response is 401, then we need to auth
-  if (response.status == 401):
-    data = response.read()
+  # If the response is 303, then we need to auth
+  if (response.status == 303):
+    authLocation = response.getheader("Location")
     conn.close()
+    logger.info("The auth location is: " + authLocation)
+
+    # Make a connection to the auth location
+    parsedAuthLocation = urlparse.urlparse(authLocation)
+    authConn = httplib.HTTPSConnection(parsedAuthLocation.netloc)
+    authConn.request("GET", parsedAuthLocation.path + "?" + parsedAuthLocation.query)
+    authResponse = authConn.getresponse()
+    data = authResponse.read()
+    authConn.close()
 
     # Look for the right magic value in the data
     match = re.search(r"VALUE=\"([0-9a-f]+)\"", data)
@@ -66,7 +81,7 @@ def FirewallAuth(username, password):
     headers = {"Content-Type": "application/x-www-form-urlencoded",
                "Accept": "text/plain"}
 
-    postConn = httplib.HTTPConnection("www.google.com:80")
+    postConn = httplib.HTTPSConnection(parsedAuthLocation.netloc)
     postConn.request("POST", "/", params, headers)
 
     # Get the response
