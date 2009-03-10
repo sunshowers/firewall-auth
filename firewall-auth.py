@@ -46,7 +46,7 @@ def FirewallKeepAlive(url):
   conn.close()
 
   # Set a timer
-  t = threading.Timer(400.0, FirewallKeepAlive, [url])
+  t = threading.Timer(200.0, FirewallKeepAlive, [url])
   t.start()
 
 
