@@ -27,27 +27,27 @@ import httplib
 import urllib
 import urlparse
 import re
-import threading
 from optparse import OptionParser
 import sys
 import logging
+import time
 
 def FirewallKeepAlive(url):
-  logger = logging.getLogger("FirewallLogger")
-  logger.info("Sending request to keep alive")
-  # Connect to the firewall
-  conn = httplib.HTTPSConnection(url.netloc)
-  conn.request("GET", url.path + "?" + url.query)
-  response = conn.getresponse()
-
-  logger.debug(str(response.status))
-  logger.debug(response.read())
-
-  conn.close()
-
-  # Set a timer
-  t = threading.Timer(200.0, FirewallKeepAlive, [url])
-  t.start()
+  while 1:
+    logger = logging.getLogger("FirewallLogger")
+    logger.info("Sending request to keep alive")
+    # Connect to the firewall
+    conn = httplib.HTTPSConnection(url.netloc)
+    conn.request("GET", url.path + "?" + url.query)
+    response = conn.getresponse()
+  
+    logger.debug(str(response.status))
+    logger.debug(response.read())
+  
+    conn.close()
+  
+    # Set a timer
+    time.sleep(200);
 
 
 def FirewallAuth(username, password):
