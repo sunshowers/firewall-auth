@@ -72,62 +72,66 @@ def IsLoggedIn():
   conn = httplib.HTTPConnection("74.125.67.100:80")
   conn.request("GET", "/")
   response = conn.getresponse()
+  conn.close()
   # 303 leads to the auth page, which means we aren't logged in
   return not (response.status == 303)
 
 def FirewallAuth(username, password):
   logger = logging.getLogger("FirewallLogger")
-  if not IsLoggedIn():
-    authLocation = response.getheader("Location")
-    conn.close()
-    logger.info("The auth location is: " + authLocation)
 
-    # Make a connection to the auth location
-    parsedAuthLocation = urlparse.urlparse(authLocation)
-    authConn = httplib.HTTPSConnection(parsedAuthLocation.netloc)
-    authConn.request("GET", parsedAuthLocation.path + "?" + parsedAuthLocation.query)
-    authResponse = authConn.getresponse()
-    data = authResponse.read()
-    authConn.close()
+  # If we're logged in, keep retrying until we've logged out
+  while IsLoggedIn():
+    logger.info("It seems like you're already logged in. Trying again in 60 seconds...")
+    time.sleep(60)
 
-    # Look for the right magic value in the data
-    match = re.search(r"VALUE=\"([0-9a-f]+)\"", data)
-    magicString = match.group(1)
-    logger.debug("The magic string is: " + magicString)
+  # At this point we aren't logged in
+  conn = httplib.HTTPConnection("74.125.67.100:80")
+  conn.request("GET", "/")
+  response = conn.getresponse()  
+  authLocation = response.getheader("Location")
+  conn.close()
+  logger.info("The auth location is: " + authLocation)
 
-    # Now construct a POST request
-    params = urllib.urlencode({'username': username, 'password': password,
-                               'magic': magicString, '4Tredir': '/'})
-    headers = {"Content-Type": "application/x-www-form-urlencoded",
-               "Accept": "text/plain"}
+  # Make a connection to the auth location
+  parsedAuthLocation = urlparse.urlparse(authLocation)
+  authConn = httplib.HTTPSConnection(parsedAuthLocation.netloc)
+  authConn.request("GET", parsedAuthLocation.path + "?" + parsedAuthLocation.query)
+  authResponse = authConn.getresponse()
+  data = authResponse.read()
+  authConn.close()
 
-    postConn = httplib.HTTPSConnection(parsedAuthLocation.netloc)
-    postConn.request("POST", "/", params, headers)
+  # Look for the right magic value in the data
+  match = re.search(r"VALUE=\"([0-9a-f]+)\"", data)
+  magicString = match.group(1)
+  logger.debug("The magic string is: " + magicString)
 
-    # Get the response
-    postResponse = postConn.getresponse()
+  # Now construct a POST request
+  params = urllib.urlencode({'username': username, 'password': password,
+                             'magic': magicString, '4Tredir': '/'})
+  headers = {"Content-Type": "application/x-www-form-urlencoded",
+             "Accept": "text/plain"}
 
-    postData = postResponse.read()
-    postConn.close()
+  postConn = httplib.HTTPSConnection(parsedAuthLocation.netloc)
+  postConn.request("POST", "/", params, headers)
 
-    # Look for the keepalive URL
-    keepaliveMatch = re.search(r"location.href=\"(.+?)\"", postData)
-    if keepaliveMatch is None:
-      # Whoops, unsuccessful -- probably the username and password didn't match
-      logger.fatal("Authentication unsuccessful, check your username and password")
-      return 3
+  # Get the response
+  postResponse = postConn.getresponse()
 
-    keepaliveURL = keepaliveMatch.group(1)
+  postData = postResponse.read()
+  postConn.close()
 
-    logger.info("The keep alive URL is: " + keepaliveURL)
-    logger.debug(postData)
-    FirewallKeepAlive(urlparse.urlparse(keepaliveURL))
+  # Look for the keepalive URL
+  keepaliveMatch = re.search(r"location.href=\"(.+?)\"", postData)
+  if keepaliveMatch is None:
+    # Whoops, unsuccessful -- probably the username and password didn't match
+    logger.fatal("Authentication unsuccessful, check your username and password")
+    return 3
 
-  else:
-    logger.fatal(("Server returned %d %s, so we cannot proceed. Are you " +
-                 "already authenticated?") %
-                 (response.status, httplib.responses[response.status]))
-    return 2
+  keepaliveURL = keepaliveMatch.group(1)
+
+  logger.info("The keep alive URL is: " + keepaliveURL)
+  logger.debug(postData)
+  FirewallKeepAlive(urlparse.urlparse(keepaliveURL))
 
 """
 Get the username and password either from command line args or interactively
