@@ -163,7 +163,7 @@ def main(argv = None):
     argv = sys.argv[1:]
 
   # First generate help syntax
-  usage = "Usage: %prog [options] username password"
+  usage = "Usage: %prog [options] [username [password]]"
   parser = OptionParser(usage = usage)
   parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose",
                     help = "Print lots of debugging information")
