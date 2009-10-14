@@ -23,6 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
+import getpass
 import httplib
 import urllib
 import urlparse
@@ -31,6 +32,19 @@ from optparse import OptionParser
 import sys
 import logging
 import time
+
+def InitLogger(options):
+  logger = logging.getLogger("FirewallLogger")
+  logger.setLevel(logging.DEBUG)
+  handler = logging.StreamHandler()
+  if options.verbose:
+    handler.setLevel(logging.DEBUG)
+  else:
+    handler.setLevel(logging.INFO)
+
+  formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+  handler.setFormatter(formatter)
+  logger.addHandler(handler)
 
 def FirewallKeepAlive(url):
   while 1:
@@ -48,7 +62,6 @@ def FirewallKeepAlive(url):
   
     # Set a timer
     time.sleep(200);
-
 
 def FirewallAuth(username, password):
   # Connect to Google, see if we can connect or not
@@ -110,6 +123,28 @@ def FirewallAuth(username, password):
     return 2
 
 """
+Get the username and password either from command line args or interactively
+"""
+def GetUsernameAndPassword(args):
+  username = None
+  if len(args) == 0:
+    # Get the username from the input
+    print "Username: ",
+    username = sys.stdin.readline()
+  else:
+    # First member of args
+    username = args[0]
+
+  password = None
+  if len(args) <= 1:
+    # Read the password without echoing it
+    password = getpass.getpass()
+  else:
+    password = args[1]
+
+  return (username, password)
+
+"""
 Main function
 """
 def main(argv = None):
@@ -125,24 +160,15 @@ def main(argv = None):
   # Parse arguments
   (options, args) = parser.parse_args(argv)
 
-  if len(args) != 2:
-    parser.error("invalid number of arguments")
+  if len(args) > 2:
+    parser.error("too many arguments")
     return 1
 
-  logger = logging.getLogger("FirewallLogger")
-  logger.setLevel(logging.DEBUG)
-  handler = logging.StreamHandler()
-  if options.verbose:
-    handler.setLevel(logging.DEBUG)
-  else:
-    handler.setLevel(logging.INFO)
-
-  formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-  handler.setFormatter(formatter)
-  logger.addHandler(handler)
+  InitLogger(options)
 
   # Try authenticating!
-  return FirewallAuth(args[0], args[1])
+  (username, password) = GetUsernameAndPassword(args)
+  return FirewallAuth(username, password)
 
 if __name__ == "__main__":
   sys.exit(main())
