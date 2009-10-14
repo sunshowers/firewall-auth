@@ -54,12 +54,12 @@ def FirewallKeepAlive(url):
     conn = httplib.HTTPSConnection(url.netloc)
     conn.request("GET", url.path + "?" + url.query)
     response = conn.getresponse()
-  
+
     logger.debug(str(response.status))
     logger.debug(response.read())
-  
+
     conn.close()
-  
+
     # Set a timer
     time.sleep(200);
 
