@@ -141,7 +141,7 @@ def GetUsernameAndPassword(args):
   if len(args) == 0:
     # Get the username from the input
     print "Username: ",
-    username = sys.stdin.readline()
+    username = sys.stdin.readline()[:-1]
   else:
     # First member of args
     username = args[0]
