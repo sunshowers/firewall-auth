@@ -63,14 +63,21 @@ def FirewallKeepAlive(url):
     # Set a timer
     time.sleep(200);
 
-def FirewallAuth(username, password):
-  # Connect to Google, see if we can connect or not
-  logger = logging.getLogger("FirewallLogger")
+"""
+This checks whether we're logged in already
+"""
+def IsLoggedIn():
+  # Connect to Google, see if we can connect or not. We use the IP directly here
+  # so that this runs on computers even if they don't have DNS configured.
   conn = httplib.HTTPConnection("74.125.67.100:80")
   conn.request("GET", "/")
   response = conn.getresponse()
-  # If the response is 303, then we need to auth
-  if (response.status == 303):
+  # 303 leads to the auth page, which means we aren't logged in
+  return not (response.status == 303)
+
+def FirewallAuth(username, password):
+  logger = logging.getLogger("FirewallLogger")
+  if not IsLoggedIn():
     authLocation = response.getheader("Location")
     conn.close()
     logger.info("The auth location is: " + authLocation)
