@@ -87,7 +87,7 @@ def FirewallAuth(username, password):
   # At this point we aren't logged in
   conn = httplib.HTTPConnection("74.125.67.100:80")
   conn.request("GET", "/")
-  response = conn.getresponse()  
+  response = conn.getresponse()
   authLocation = response.getheader("Location")
   conn.close()
   logger.info("The auth location is: " + authLocation)
