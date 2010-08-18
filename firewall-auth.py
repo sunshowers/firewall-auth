@@ -130,17 +130,14 @@ def run_state_machine():
 
   atexit.register(atexit_logout)
 
-  try:
-    while True:
-      statefunc = state_functions[state]
-      if args is None:
-        state, sleeptime, args = statefunc()
-      else:
-        state, sleeptime, args = statefunc(*args)
-      if sleeptime > 0:
-        time.sleep(sleeptime)
-  except (KeyboardInterrupt, SystemExit):
-    atexit_logout()
+  while True:
+    statefunc = state_functions[state]
+    if args is None:
+      state, sleeptime, args = statefunc()
+    else:
+      state, sleeptime, args = statefunc(*args)
+    if sleeptime > 0:
+      time.sleep(sleeptime)
 
 class LoginState:
   AlreadyLoggedIn, InvalidCredentials, Successful = range(3)
