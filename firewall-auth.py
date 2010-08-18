@@ -33,6 +33,7 @@ import sys
 import logging
 import time
 import atexit
+import socket
 
 class FirewallState:
   Start, LoggedIn, End = range(3)
@@ -53,7 +54,7 @@ def start_func():
 
   try:
     loginstate, data = login()
-  except httplib.HTTPException as e:
+  except (httplib.HTTPException, socket.error) as e:
     logger.info("Exception |%s| while trying to log in. Retrying in %d seconds." %
                 (e, ERROR_RETRY_SECS))
     return (FirewallState.Start, ERROR_RETRY_SECS, None)
@@ -85,7 +86,7 @@ def logged_in_func(keepaliveurl):
     logger.info("The keepalive URL %s doesn't work. Attempting to log in again." %
                 keepaliveurl.geturl())
     return (FirewallState.Start, 0, None)
-  except httplib.HTTPException as e:
+  except (httplib.HTTPException, socket.error) as e:
     logger.info("Exception |%s| while trying to keep alive. Retrying in %d seconds." %
                 (e, ERROR_RETRY_SECS))
     return (FirewallState.LoggedIn, ERROR_RETRY_SECS, [keepaliveurl])
@@ -117,12 +118,12 @@ def run_state_machine():
       logouturl = urlparse.ParseResult(url.scheme, url.netloc, "/logout",
                                        url.params, url.query, url.fragment)
       try:
+        logger.info("Logging out with URL %s" % logouturl.geturl())
         conn = httplib.HTTPSConnection(logouturl.netloc)
-        logger.info("Logging out with URL %s" % logouturl)
         conn.request("GET", logouturl.path + "?" + logouturl.query)
         response = conn.getresponse()
         response.read()
-      except httplib.HTTPException as e:
+      except (httplib.HTTPException, socket.error) as e:
         # Just print an error message
         logger.info("Exception |%s| while logging out." % e)
       finally:
