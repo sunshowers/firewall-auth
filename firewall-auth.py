@@ -81,8 +81,8 @@ def FirewallAuth(username, password):
 
   # If we're logged in, keep retrying until we've logged out
   while IsLoggedIn():
-    logger.info("It seems like you're already logged in. Trying again in 60 seconds...")
-    time.sleep(60)
+    logger.info("It seems like you're already logged in. Trying again in 5 seconds...")
+    time.sleep(5)
 
   # At this point we aren't logged in
   conn = httplib.HTTPConnection("74.125.67.100:80")
