@@ -187,7 +187,7 @@ def login():
   headers = {"Content-Type": "application/x-www-form-urlencoded",
              "Accept": "text/plain"}
 
-  try: 
+  try:
     postconn = httplib.HTTPSConnection(parsedauthloc.netloc)
     postconn.request("POST", "/", params, headers)
 
