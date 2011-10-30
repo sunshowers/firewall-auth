@@ -48,7 +48,7 @@ def start_func():
   can't do anything much. If we're not, we should transition to the
   not-logged-in state.
   """
-  ERROR_RETRY_SECS = 15
+  ERROR_RETRY_SECS = 5
   LOGGED_IN_RETRY_SECS = 5
   logger = logging.getLogger("FirewallLogger")
 
@@ -78,7 +78,7 @@ def logged_in_func(keepaliveurl):
   URL. If the keepalive URL doesn't work any more, go back to the start state.
   """
   logger = logging.getLogger("FirewallLogger")
-  ERROR_RETRY_SECS = 15
+  ERROR_RETRY_SECS = 5
   LOGGED_IN_SECS = 200
   try:
     keep_alive(keepaliveurl)
@@ -153,7 +153,7 @@ def login():
   logger = logging.getLogger("FirewallLogger")
   # Find out where to auth
   try:
-    conn = httplib.HTTPConnection("74.125.67.100:80")
+    conn = httplib.HTTPConnection("74.125.236.51:80")
     conn.request("GET", "/")
     response = conn.getresponse()
     # 303 leads to the auth page, so it means we're not logged in
