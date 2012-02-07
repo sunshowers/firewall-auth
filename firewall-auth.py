@@ -34,6 +34,7 @@ import logging
 import time
 import atexit
 import socket
+import gc
 
 class FirewallState:
   Start, LoggedIn, End = range(3)
@@ -228,6 +229,7 @@ def keep_alive(url):
     logger.debug(response.read())
   finally:
     conn.close()
+    gc.collect()
 
 def get_credentials(args):
   """
