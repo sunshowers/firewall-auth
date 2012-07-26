@@ -23,12 +23,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
+import netrc
 import getpass
 import httplib
 import urllib
 import urlparse
+import argparse
 import re
-from optparse import OptionParser
 import sys
 import logging
 import time
@@ -42,6 +43,8 @@ class FirewallState:
 # Globals, set right in the beginning
 username = None
 password = None
+server = "74.125.236.51"
+port = 80
 
 def start_func():
   """
@@ -154,7 +157,7 @@ def login():
   logger = logging.getLogger("FirewallLogger")
   # Find out where to auth
   try:
-    conn = httplib.HTTPConnection("74.125.236.51:80")
+    conn = httplib.HTTPConnection(server, port)
     conn.request("GET", "/")
     response = conn.getresponse()
     # 303 leads to the auth page, so it means we're not logged in
@@ -231,33 +234,28 @@ def keep_alive(url):
     conn.close()
     gc.collect()
 
-def get_credentials(args):
+def get_credentials(interactive=False):
   """
-  Get the username and password, either from command line args or interactively.
+  Get the username and password, either from netrc or interactively.
   """
-  username = None
-  if len(args) == 0:
-    # Get the username from the input
+  if interactive:
+    # Get the username and password interactively
     print "Username: ",
     username = sys.stdin.readline()[:-1]
-  else:
-    # First member of args
-    username = args[0]
-
-  password = None
-  if len(args) <= 1:
     # Read the password without echoing it
     password = getpass.getpass()
   else:
-    password = args[1]
+    # Get the username and password from netrc
+    info = netrc.netrc()
+    username, account, password = info.authenticators(server)
 
   return (username, password)
 
-def init_logger(options):
+def init_logger(verbose=False):
   logger = logging.getLogger("FirewallLogger")
   logger.setLevel(logging.DEBUG)
   handler = logging.StreamHandler()
-  if options.verbose:
+  if verbose:
     handler.setLevel(logging.DEBUG)
   else:
     handler.setLevel(logging.INFO)
@@ -269,28 +267,21 @@ def init_logger(options):
 """
 Main function
 """
-def main(argv = None):
-  if argv is None:
-    argv = sys.argv[1:]
-
-  # First generate help syntax
-  usage = "Usage: %prog [options] [username [password]]"
-  parser = OptionParser(usage = usage)
-  parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose",
+def main():
+  parser = argparse.ArgumentParser()
+  parser.add_argument("-v", "--verbose", action = "store_true", dest = "verbose",
                     help = "Print lots of debugging information")
+  parser.add_argument("-i", "--interactive", action = "store_true", dest = "interactive",
+                    help = "Enter username and password interactively")
 
   # Parse arguments
-  (options, args) = parser.parse_args(argv)
+  args = parser.parse_args()
 
-  if len(args) > 2:
-    parser.error("too many arguments")
-    return 1
-
-  init_logger(options)
+  init_logger(args.verbose)
 
   # Try authenticating!
   global username, password
-  username, password = get_credentials(args)
+  username, password = get_credentials(args.interactive)
   run_state_machine()
   return 0
 
