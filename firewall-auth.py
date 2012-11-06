@@ -35,6 +35,7 @@ import time
 import atexit
 import socket
 import gc
+import netrc
 
 class FirewallState:
   Start, LoggedIn, End = range(3)
@@ -42,6 +43,8 @@ class FirewallState:
 # Globals, set right in the beginning
 username = None
 password = None
+server = "74.125.236.51"
+port = 80
 
 def start_func():
   """
@@ -154,7 +157,7 @@ def login():
   logger = logging.getLogger("FirewallLogger")
   # Find out where to auth
   try:
-    conn = httplib.HTTPConnection("74.125.236.51:80")
+    conn = httplib.HTTPConnection(server, port)
     conn.request("GET", "/")
     response = conn.getresponse()
     # 303 leads to the auth page, so it means we're not logged in
@@ -231,11 +234,24 @@ def keep_alive(url):
     conn.close()
     gc.collect()
 
-def get_credentials(args):
+def get_credentials(options, args):
   """
-  Get the username and password, either from command line args or interactively.
+  Get the username and password, from netrc, command line args or interactively.
   """
   username = None
+  password = None
+
+  if options.netrc:
+    logger = logging.getLogger("FirewallLogger")
+    try:
+      info = netrc.netrc()
+      cred = info.authenticators(server)
+      if cred:
+        return (cred[0], cred[2])
+      logger.info("Could not find credentials in netrc file.")
+    except:
+      logger.info("Could not read from netrc file.")
+
   if len(args) == 0:
     # Get the username from the input
     print "Username: ",
@@ -244,7 +260,6 @@ def get_credentials(args):
     # First member of args
     username = args[0]
 
-  password = None
   if len(args) <= 1:
     # Read the password without echoing it
     password = getpass.getpass()
@@ -278,6 +293,8 @@ def main(argv = None):
   parser = OptionParser(usage = usage)
   parser.add_option("-v", "--verbose", action = "store_true", dest = "verbose",
                     help = "Print lots of debugging information")
+  parser.add_option("-n", "--netrc", action = "store_true", dest = "netrc",
+                    help = "Read credentials from netrc file")
 
   # Parse arguments
   (options, args) = parser.parse_args(argv)
@@ -290,7 +307,7 @@ def main(argv = None):
 
   # Try authenticating!
   global username, password
-  username, password = get_credentials(args)
+  username, password = get_credentials(options, args)
   run_state_machine()
   return 0
 
