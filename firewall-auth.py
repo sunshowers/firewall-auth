@@ -43,8 +43,6 @@ class FirewallState:
 # Globals, set right in the beginning
 username = None
 password = None
-server = "74.125.236.51"
-port = 80
 
 def start_func():
   """
@@ -157,7 +155,7 @@ def login():
   logger = logging.getLogger("FirewallLogger")
   # Find out where to auth
   try:
-    conn = httplib.HTTPConnection(server, port)
+    conn = httplib.HTTPConnection("74.125.236.51:80")
     conn.request("GET", "/")
     response = conn.getresponse()
     # 303 leads to the auth page, so it means we're not logged in
@@ -245,7 +243,7 @@ def get_credentials(options, args):
     logger = logging.getLogger("FirewallLogger")
     try:
       info = netrc.netrc()
-      cred = info.authenticators(server)
+      cred = info.authenticators("172.31.1.251")
       if cred:
         return (cred[0], cred[2])
       logger.info("Could not find credentials in netrc file.")
