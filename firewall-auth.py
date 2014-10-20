@@ -179,7 +179,7 @@ def login():
     authconn.close()
 
   # Look for the right magic value in the data
-  match = re.search(r"VALUE=\"([0-9a-f]+)\"", data)
+  match = re.search(r"VALUE=\"([0-9a-f]+)\"", data, re.IGNORECASE)
   magicString = match.group(1)
   logger.debug("The magic string is: " + magicString)
 
