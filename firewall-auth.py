@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 # Copyright (c) 2009 Siddharth Agarwal
 #
@@ -22,6 +22,8 @@
 # WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
+
+# Fixes to be natively compatible with archlinux 
 
 import getpass
 import httplib
@@ -81,7 +83,7 @@ def logged_in_func(keepaliveurl):
   """
   logger = logging.getLogger("FirewallLogger")
   ERROR_RETRY_SECS = 5
-  LOGGED_IN_SECS = 200
+  LOGGED_IN_SECS = 600
   try:
     keep_alive(keepaliveurl)
   except httplib.BadStatusLine:
